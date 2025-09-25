@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Brain, Upload, Play, BarChart3, Settings, FileText, Zap, Target } from 'lucide-react';
+import { handleError } from '@/lib/error-handler';
+import { logError, logInfo } from '@/lib/error-logger';
 
 interface ModelTraining {
   id: string;
@@ -34,10 +36,11 @@ interface TrainingDataset {
 
 const AIModelTraining: React.FC = () => {
   const [models, setModels] = useState<ModelTraining[]>([]);
-
   const [datasets, setDatasets] = useState<TrainingDataset[]>([]);
-
   const [selectedModel, setSelectedModel] = useState<ModelTraining | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const [newModel, setNewModel] = useState({
     name: '',
     type: 'progress_prediction' as const,
@@ -46,42 +49,111 @@ const AIModelTraining: React.FC = () => {
   });
 
   const handleCreateModel = async () => {
-    const model: ModelTraining = {
-      id: Date.now().toString(),
-      name: newModel.name,
-      type: newModel.type,
-      status: 'draft',
-      accuracy: 0,
-      datasetSize: datasets.find(d => d.id === newModel.datasetId)?.size || 0,
-      trainingProgress: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-      lastTrained: 'Never'
-    };
+    try {
+      setLoading(true);
+      setError(null);
 
-    setModels([...models, model]);
-    setNewModel({ name: '', type: 'progress_prediction', datasetId: '', description: '' });
+      // Validate input
+      if (!newModel.name.trim()) {
+        throw new Error('Model name is required');
+      }
+      if (!newModel.datasetId) {
+        throw new Error('Please select a training dataset');
+      }
+
+      const selectedDataset = datasets.find(d => d.id === newModel.datasetId);
+      if (!selectedDataset) {
+        throw new Error('Selected dataset not found');
+      }
+
+      const model: ModelTraining = {
+        id: Date.now().toString(),
+        name: newModel.name.trim(),
+        type: newModel.type,
+        status: 'draft',
+        accuracy: 0,
+        datasetSize: selectedDataset.size,
+        trainingProgress: 0,
+        createdAt: new Date().toISOString().split('T')[0],
+        lastTrained: 'Never'
+      };
+
+      setModels([...models, model]);
+      setNewModel({ name: '', type: 'progress_prediction', datasetId: '', description: '' });
+      
+      logInfo('Model created successfully', 'AIModelTraining', 'createModel', { modelId: model.id });
+    } catch (error) {
+      const errorMessage = handleError(error, { 
+        showToast: true, 
+        logError: true 
+      });
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleStartTraining = async (modelId: string) => {
-    setModels(models.map(model => 
-      model.id === modelId 
-        ? { ...model, status: 'training', trainingProgress: 0 }
-        : model
-    ));
+    try {
+      setLoading(true);
+      setError(null);
 
-    // Simulate training progress
-    for (let progress = 0; progress <= 100; progress += 10) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const model = models.find(m => m.id === modelId);
+      if (!model) {
+        throw new Error('Model not found');
+      }
+
+      if (model.status !== 'draft') {
+        throw new Error('Only draft models can be trained');
+      }
+
+      // Update model status to training
       setModels(models.map(model => 
         model.id === modelId 
-          ? { 
-              ...model, 
-              trainingProgress: progress,
-              status: progress === 100 ? 'completed' : 'training',
-              accuracy: progress === 100 ? Math.random() * 20 + 80 : model.accuracy
-            }
+          ? { ...model, status: 'training', trainingProgress: 0 }
           : model
       ));
+
+      logInfo('Training started', 'AIModelTraining', 'startTraining', { modelId });
+
+      // Simulate training progress with error handling
+      for (let progress = 0; progress <= 100; progress += 10) {
+        try {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          setModels(prevModels => prevModels.map(model => 
+            model.id === modelId 
+              ? { 
+                  ...model, 
+                  trainingProgress: progress,
+                  status: progress === 100 ? 'completed' : 'training',
+                  accuracy: progress === 100 ? Math.random() * 20 + 80 : model.accuracy,
+                  lastTrained: progress === 100 ? new Date().toISOString().split('T')[0] : model.lastTrained
+                }
+              : model
+          ));
+        } catch (trainingError) {
+          // Handle training errors
+          setModels(prevModels => prevModels.map(model => 
+            model.id === modelId 
+              ? { ...model, status: 'failed' }
+              : model
+          ));
+          
+          logError(trainingError as Error, 'AIModelTraining', 'trainingProgress', { modelId, progress });
+          throw trainingError;
+        }
+      }
+
+      logInfo('Training completed successfully', 'AIModelTraining', 'trainingComplete', { modelId });
+    } catch (error) {
+      const errorMessage = handleError(error, { 
+        showToast: true, 
+        logError: true 
+      });
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -196,15 +268,44 @@ const AIModelTraining: React.FC = () => {
                     placeholder="Describe the model's purpose and expected outcomes"
                   />
                 </div>
-                <Button onClick={handleCreateModel} disabled={!newModel.name || !newModel.datasetId}>
-                  Create Model
+                <Button 
+                  onClick={handleCreateModel} 
+                  disabled={!newModel.name || !newModel.datasetId || loading}
+                  className="flex items-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Creating...
+                    </>
+                  ) : (
+                    'Create Model'
+                  )}
                 </Button>
               </CardContent>
             </Card>
 
+            {/* Error Display */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             {/* Models List */}
             <div className="grid gap-4">
-              {models.map((model) => (
+              {models.length === 0 ? (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <Brain className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No Models Yet</h3>
+                    <p className="text-muted-foreground">
+                      Create your first AI model to get started with machine learning.
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                models.map((model) => (
                 <Card key={model.id}>
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -225,10 +326,20 @@ const AIModelTraining: React.FC = () => {
                           <Button 
                             size="sm" 
                             onClick={() => handleStartTraining(model.id)}
+                            disabled={loading}
                             className="flex items-center gap-1"
                           >
-                            <Play className="h-3 w-3" />
-                            Train
+                            {loading ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                Starting...
+                              </>
+                            ) : (
+                              <>
+                                <Play className="h-3 w-3" />
+                                Train
+                              </>
+                            )}
                           </Button>
                         )}
                       </div>
@@ -264,14 +375,30 @@ const AIModelTraining: React.FC = () => {
                     )}
                   </CardContent>
                 </Card>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </TabsContent>
 
         <TabsContent value="datasets" className="space-y-6">
           <div className="grid gap-4">
-            {datasets.map((dataset) => (
+            {datasets.length === 0 ? (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Datasets Available</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Upload training datasets to start creating AI models.
+                  </p>
+                  <Button>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Dataset
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              datasets.map((dataset) => (
               <Card key={dataset.id}>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -296,7 +423,8 @@ const AIModelTraining: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              ))
+            )}
           </div>
         </TabsContent>
 
@@ -376,7 +504,18 @@ const AIModelTraining: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4">
-                {models.filter(m => m.status === 'completed').map((model) => (
+                {models.filter(m => m.status === 'completed').length === 0 ? (
+                  <Card>
+                    <CardContent className="p-6 text-center">
+                      <Settings className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No Completed Models</h3>
+                      <p className="text-muted-foreground">
+                        Train and complete models to deploy them to production.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  models.filter(m => m.status === 'completed').map((model) => (
                   <div key={model.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center gap-3">
                       {getModelTypeIcon(model.type)}
@@ -396,7 +535,8 @@ const AIModelTraining: React.FC = () => {
                       </Button>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
