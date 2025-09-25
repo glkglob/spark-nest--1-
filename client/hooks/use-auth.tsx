@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, LoginRequest, SignupRequest, AuthResponse } from "@shared/api";
 import { api, ApiError } from "@/lib/api";
+import { handleError, AppError } from "@/lib/error-handler";
+import { setUserId } from "@/lib/error-logger";
 
 interface AuthContextType {
   user: User | null;
@@ -42,12 +44,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('auth_token', data.token);
       localStorage.setItem('auth_user', JSON.stringify(data.user));
       
+      // Set user ID for error logging
+      setUserId(data.user.id);
+      
       return { success: true };
     } catch (error) {
-      if (error instanceof ApiError) {
-        return { success: false, error: error.message };
-      }
-      return { success: false, error: 'Network error' };
+      const errorMessage = handleError(error, { 
+        showToast: false, // Don't show toast here, let the component handle it
+        logError: true 
+      });
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -61,12 +67,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('auth_token', authData.token);
       localStorage.setItem('auth_user', JSON.stringify(authData.user));
       
+      // Set user ID for error logging
+      setUserId(authData.user.id);
+      
       return { success: true };
     } catch (error) {
-      if (error instanceof ApiError) {
-        return { success: false, error: error.message };
-      }
-      return { success: false, error: 'Network error' };
+      const errorMessage = handleError(error, { 
+        showToast: false, // Don't show toast here, let the component handle it
+        logError: true 
+      });
+      return { success: false, error: errorMessage };
     }
   };
 
@@ -76,6 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.setToken(null);
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
+    
+    // Clear user ID from error logging
+    setUserId('');
   };
 
   const value: AuthContextType = {

@@ -4,6 +4,16 @@
  */
 
 import { AuthError, User } from '@shared/api';
+import { 
+  AppError, 
+  ErrorCodes, 
+  createApiError, 
+  createNotFoundError, 
+  createUnauthorizedError, 
+  createForbiddenError,
+  createValidationError,
+  handleError 
+} from './error-handler';
 
 export class ApiError extends Error {
   constructor(
@@ -28,31 +38,94 @@ class ApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    };
+    try {
+      const url = `${this.baseUrl}${endpoint}`;
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      };
 
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
-    }
+      if (this.token) {
+        headers.Authorization = `Bearer ${this.token}`;
+      }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new ApiError(
-        errorData.message || `HTTP ${response.status}`,
-        response.status,
-        errorData.errors
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        // Map HTTP status codes to appropriate error types
+        switch (response.status) {
+          case 400:
+            throw createValidationError(
+              errorData.message || 'Invalid request data',
+              errorData.details
+            );
+          case 401:
+            throw createUnauthorizedError(
+              errorData.message || 'Authentication required'
+            );
+          case 403:
+            throw createForbiddenError(
+              errorData.message || 'Access forbidden'
+            );
+          case 404:
+            throw createNotFoundError(
+              errorData.message || 'Resource not found'
+            );
+          case 429:
+            throw createApiError(
+              errorData.message || 'Too many requests',
+              ErrorCodes.QUOTA_EXCEEDED,
+              429
+            );
+          case 500:
+            throw createApiError(
+              errorData.message || 'Internal server error',
+              ErrorCodes.INTERNAL_ERROR,
+              500
+            );
+          case 503:
+            throw createApiError(
+              errorData.message || 'Service unavailable',
+              ErrorCodes.SERVICE_UNAVAILABLE,
+              503
+            );
+          default:
+            throw createApiError(
+              errorData.message || `HTTP ${response.status}`,
+              ErrorCodes.INTERNAL_ERROR,
+              response.status
+            );
+        }
+      }
+
+      return response.json();
+    } catch (error) {
+      // Handle network errors
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw createApiError(
+          'Network error: Unable to connect to server',
+          ErrorCodes.NETWORK_ERROR,
+          0
+        );
+      }
+      
+      // Re-throw AppError instances
+      if (error instanceof AppError) {
+        throw error;
+      }
+      
+      // Handle other errors
+      throw createApiError(
+        error instanceof Error ? error.message : 'Unknown error occurred',
+        ErrorCodes.INTERNAL_ERROR,
+        500
       );
     }
-
-    return response.json();
   }
 
   private async uploadFile<T>(

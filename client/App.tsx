@@ -9,6 +9,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/use-auth";
 import { NotificationProvider } from "@/hooks/use-notifications";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useEffect, Suspense, lazy } from "react";
 import { 
   registerServiceWorker, 
@@ -52,17 +53,18 @@ const App = () => {
   }, []);
 
   return (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <NotificationProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-          <div className="min-h-dvh flex flex-col">
-            <Header />
-            <main className="flex-1" role="main" aria-label="Main content">
-              <Routes>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <NotificationProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+            <div className="min-h-dvh flex flex-col">
+              <Header />
+              <main className="flex-1" role="main" aria-label="Main content">
+                <Routes>
                 <Route path="/" element={<Index />} />
                 
                 {/* Auth routes - redirect if already logged in */}
@@ -194,6 +196,7 @@ const App = () => {
       </NotificationProvider>
     </AuthProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
   );
 };
 
