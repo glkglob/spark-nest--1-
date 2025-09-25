@@ -51,7 +51,7 @@ export const handleRegisterIoTDevice: RequestHandler = async (req, res) => {
 
     const deviceData = validation.data;
     
-    // Mock IoT device registration
+    // Register IoT device
     const device = {
       id: `device_${Date.now()}`,
       userId,
@@ -59,8 +59,8 @@ export const handleRegisterIoTDevice: RequestHandler = async (req, res) => {
       registeredAt: new Date().toISOString(),
       lastSeen: new Date().toISOString(),
       firmwareVersion: '2.1.3',
-      batteryLevel: Math.floor(Math.random() * 100),
-      signalStrength: Math.floor(Math.random() * 100)
+      batteryLevel: 100,
+      signalStrength: 100
     };
     
     res.status(201).json({

@@ -64,60 +64,7 @@ interface DeviceFleet {
 }
 
 const IoTManagement: React.FC = () => {
-  const [devices, setDevices] = useState<IoTDevice[]>([
-    {
-      id: 'device_001',
-      name: 'Temperature Sensor Alpha',
-      type: 'sensor',
-      status: 'online',
-      batteryLevel: 85,
-      signalStrength: 92,
-      location: { lat: 34.0522, lon: -118.2437, zone: 'Building A, Floor 1' },
-      lastSeen: '2 minutes ago',
-      firmwareVersion: '2.1.3',
-      data: { temperature: 72, humidity: 65, pressure: 1013 },
-      alerts: 0
-    },
-    {
-      id: 'device_002',
-      name: 'Crane Load Monitor',
-      type: 'equipment',
-      status: 'online',
-      batteryLevel: 0,
-      signalStrength: 88,
-      location: { lat: 34.0525, lon: -118.2440, zone: 'Construction Site' },
-      lastSeen: '1 minute ago',
-      firmwareVersion: '1.8.2',
-      data: { utilization: 75, vibration: 0.3, pressure: 0.45 },
-      alerts: 1
-    },
-    {
-      id: 'device_003',
-      name: 'Worker Safety Wearable',
-      type: 'wearable',
-      status: 'online',
-      batteryLevel: 92,
-      signalStrength: 95,
-      location: { lat: 34.0523, lon: -118.2438, zone: 'Worker John Doe' },
-      lastSeen: '30 seconds ago',
-      firmwareVersion: '3.0.1',
-      data: { temperature: 98.6, vibration: 0.1 },
-      alerts: 0
-    },
-    {
-      id: 'device_004',
-      name: 'Air Quality Monitor',
-      type: 'environmental',
-      status: 'offline',
-      batteryLevel: 23,
-      signalStrength: 45,
-      location: { lat: 34.0521, lon: -118.2436, zone: 'Site Entrance' },
-      lastSeen: '15 minutes ago',
-      firmwareVersion: '2.0.5',
-      data: {},
-      alerts: 2
-    }
-  ]);
+  const [devices, setDevices] = useState<IoTDevice[]>([]);
 
   const [fleets, setFleets] = useState<DeviceFleet[]>([
     {

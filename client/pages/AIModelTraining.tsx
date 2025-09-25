@@ -33,68 +33,9 @@ interface TrainingDataset {
 }
 
 const AIModelTraining: React.FC = () => {
-  const [models, setModels] = useState<ModelTraining[]>([
-    {
-      id: '1',
-      name: 'Progress Prediction Model',
-      type: 'progress_prediction',
-      status: 'completed',
-      accuracy: 94.2,
-      datasetSize: 1250,
-      trainingProgress: 100,
-      createdAt: '2024-01-15',
-      lastTrained: '2024-01-20'
-    },
-    {
-      id: '2',
-      name: 'Quality Assessment AI',
-      type: 'quality_assessment',
-      status: 'training',
-      accuracy: 87.5,
-      datasetSize: 890,
-      trainingProgress: 65,
-      createdAt: '2024-01-18',
-      lastTrained: '2024-01-22'
-    },
-    {
-      id: '3',
-      name: 'Safety Risk Analyzer',
-      type: 'safety_analysis',
-      status: 'draft',
-      accuracy: 0,
-      datasetSize: 0,
-      trainingProgress: 0,
-      createdAt: '2024-01-20',
-      lastTrained: 'Never'
-    }
-  ]);
+  const [models, setModels] = useState<ModelTraining[]>([]);
 
-  const [datasets, setDatasets] = useState<TrainingDataset[]>([
-    {
-      id: '1',
-      name: 'Construction Progress Dataset',
-      type: 'Progress Tracking',
-      size: 1250,
-      features: ['timeline', 'budget', 'resources', 'weather', 'team_size'],
-      uploadDate: '2024-01-10'
-    },
-    {
-      id: '2',
-      name: 'Quality Inspection Data',
-      type: 'Quality Control',
-      size: 890,
-      features: ['defects', 'measurements', 'standards', 'inspector', 'location'],
-      uploadDate: '2024-01-12'
-    },
-    {
-      id: '3',
-      name: 'Safety Incident Reports',
-      type: 'Safety Analysis',
-      size: 567,
-      features: ['incident_type', 'severity', 'location', 'time', 'weather'],
-      uploadDate: '2024-01-14'
-    }
-  ]);
+  const [datasets, setDatasets] = useState<TrainingDataset[]>([]);
 
   const [selectedModel, setSelectedModel] = useState<ModelTraining | null>(null);
   const [newModel, setNewModel] = useState({

@@ -61,20 +61,9 @@ export default function Construction() {
   const [projectId, setProjectId] = useState<number>(constructionData.projects[0].id);
   const project = useMemo<Project | undefined>(() => constructionData.projects.find(p => p.id === projectId), [projectId]);
 
-  const costPerfData = [
-    { name: "Week 1", PV: 100000, EV: 95000, AC: 98000 },
-    { name: "Week 2", PV: 200000, EV: 190000, AC: 195000 },
-    { name: "Week 3", PV: 350000, EV: 340000, AC: 345000 },
-    { name: "Week 4", PV: 500000, EV: 480000, AC: 490000 },
-    { name: "Current", PV: 595000, EV: 585000, AC: 585000 },
-  ];
+  const costPerfData = [];
 
-  const abccData = [
-    { name: "Labor", value: 328000 },
-    { name: "Materials", value: 284000 },
-    { name: "Equipment", value: 156000 },
-    { name: "Overhead", value: 127500 },
-  ];
+  const abccData = [];
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30000);

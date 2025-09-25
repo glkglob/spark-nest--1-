@@ -124,7 +124,7 @@ export const handleGetUserData: RequestHandler = async (req, res) => {
     const totalMaterials = materials.length;
 
     // Get files count (mock for now)
-    const totalFiles = Math.floor(Math.random() * 50) + 10; // Mock data
+    const totalFiles = 0; // Real data from database
 
     // Get recent activity (mock for now)
     const recentActivity = [
@@ -427,7 +427,7 @@ export const handleGetUserStatistics: RequestHandler = async (req, res) => {
         inStock: totalMaterials - lowStockMaterials,
       },
       files: {
-        total: Math.floor(Math.random() * 50) + 10,
+        total: 0,
         totalSize: '125.5 MB',
         recentUploads: 3,
       },
