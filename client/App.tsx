@@ -20,21 +20,21 @@ import {
 } from "@/lib/pwa";
 
 // Lazy load pages for code splitting
-const Index = lazy(() => import("./pages/Index"));
-const Login = lazy(() => import("./pages/Login"));
-const Signup = lazy(() => import("./pages/Signup"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Construction = lazy(() => import("./pages/Construction"));
-const Projects = lazy(() => import("./pages/Projects"));
-const Analytics = lazy(() => import("./pages/Analytics"));
-const UserManagement = lazy(() => import("./pages/UserManagement"));
-const Profile = lazy(() => import("./pages/Profile"));
-const AIModelTraining = lazy(() => import("./pages/AIModelTraining"));
-const IoTManagement = lazy(() => import("./pages/IoTManagement"));
-const BlockchainMarketplace = lazy(() => import("./pages/BlockchainMarketplace"));
-const NotFound = lazy(() => import("./pages/NotFound"));
-import Header from "./components/BrandHeader";
-import Footer from "./components/BrandFooter";
+const Index = lazy(() => import("@/pages/Index"));
+const Login = lazy(() => import("@/pages/Login"));
+const Signup = lazy(() => import("@/pages/Signup"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Construction = lazy(() => import("@/pages/Construction"));
+const Projects = lazy(() => import("@/pages/Projects"));
+const Analytics = lazy(() => import("@/pages/Analytics"));
+const UserManagement = lazy(() => import("@/pages/UserManagement"));
+const Profile = lazy(() => import("@/pages/Profile"));
+const AIModelTraining = lazy(() => import("@/pages/AIModelTraining"));
+const IoTManagement = lazy(() => import("@/pages/IoTManagement"));
+const BlockchainMarketplace = lazy(() => import("@/pages/BlockchainMarketplace"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+import Header from "@/components/BrandHeader";
+import Footer from "@/components/BrandFooter";
 
 const queryClient = new QueryClient();
 
