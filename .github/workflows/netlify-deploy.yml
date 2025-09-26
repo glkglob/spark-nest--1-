@@ -7,6 +7,8 @@ on:
 permissions:
   contents: read
   actions: read
+  id-token: write
+  checks: read
 
 jobs:
   deploy:
@@ -39,6 +41,9 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+
 
 
 
