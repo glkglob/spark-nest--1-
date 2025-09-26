@@ -13,6 +13,9 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-22.04
+    env:
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,15 +38,11 @@ jobs:
         run: pnpm build
 
       - name: Deploy to Netlify (production)
+        if: ${{ env.NETLIFY_SITE_ID != '' && env.NETLIFY_AUTH_TOKEN != '' }}
         uses: nwtgck/actions-netlify@v3
         with:
-          args: deploy --prod --dir=dist/spa --functions=netlify/functions --message "GitHub Actions deploy"
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-
-
-
-
-
+          publish-dir: dist/spa
+          functions-dir: netlify/functions
+          production-deploy: true
+          deploy-message: GitHub Actions deploy
+          github-token: ${{ secrets.GITHUB_TOKEN }}

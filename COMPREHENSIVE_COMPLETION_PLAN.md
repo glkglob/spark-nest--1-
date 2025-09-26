@@ -123,7 +123,7 @@
 **Tasks**:
 - [ ] Connect automation pages to `useAutomation` hook
 - [ ] Add workflow builder interface
-- [ ] Implement rule creation tools
+- [ ] Implement rule creation tools 
 - [ ] Add automation monitoring
 - [ ] Integrate with project workflows
 
