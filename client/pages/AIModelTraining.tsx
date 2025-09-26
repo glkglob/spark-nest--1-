@@ -12,6 +12,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Brain, Upload, Play, BarChart3, Settings, FileText, Zap, Target } from 'lucide-react';
 import { handleError } from '@/lib/error-handler';
 import { logError, logInfo } from '@/lib/error-logger';
+import { useML } from '@/hooks/use-ml';
+import { useErrorHandler } from '@/hooks/use-error-handler';
+import { useRetry } from '@/hooks/use-retry';
+import ErrorDisplay from '@/components/ErrorDisplay';
 
 interface ModelTraining {
   id: string;
@@ -35,12 +39,43 @@ interface TrainingDataset {
 }
 
 const AIModelTraining: React.FC = () => {
-  const [models, setModels] = useState<ModelTraining[]>([]);
-  const [datasets, setDatasets] = useState<TrainingDataset[]>([]);
+  // ML Service Hook Integration
+  const {
+    models: mlModels,
+    datasets: mlDatasets,
+    pipelines,
+    loading: mlLoading,
+    error: mlError,
+    createModel,
+    startTraining,
+    uploadDataset,
+    createPipeline,
+    getPredictions,
+    getModelMetrics
+  } = useML();
+
+  // Error Handling
+  const {
+    error: errorState,
+    isError,
+    handleError: handleErrorWithState,
+    clearError,
+    showSuccessToast
+  } = useErrorHandler({
+    component: 'AIModelTraining',
+    showToast: true,
+    logError: true
+  });
+
+  // Retry Mechanism
+  const { executeWithRetry, isRetrying } = useRetry({
+    maxAttempts: 3,
+    delay: 1000,
+    exponentialBackoff: true
+  });
+
+  // Local State
   const [selectedModel, setSelectedModel] = useState<ModelTraining | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
   const [newModel, setNewModel] = useState({
     name: '',
     type: 'progress_prediction' as const,
@@ -48,11 +83,31 @@ const AIModelTraining: React.FC = () => {
     description: ''
   });
 
-  const handleCreateModel = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Convert ML models to local format for compatibility
+  const models: ModelTraining[] = mlModels.map(mlModel => ({
+    id: mlModel.id,
+    name: mlModel.name,
+    type: mlModel.type as any,
+    status: mlModel.status as any,
+    accuracy: mlModel.accuracy,
+    datasetSize: mlModel.dataset.samples,
+    trainingProgress: mlModel.status === 'training' ? 75 : mlModel.status === 'trained' ? 100 : 0,
+    createdAt: mlModel.createdAt.split('T')[0],
+    lastTrained: mlModel.status === 'trained' ? mlModel.updatedAt.split('T')[0] : 'Never'
+  }));
 
+  // Convert ML datasets to local format
+  const datasets: TrainingDataset[] = mlDatasets.map(mlDataset => ({
+    id: mlDataset.id,
+    name: mlDataset.name,
+    type: mlDataset.type,
+    size: mlDataset.size,
+    features: Array.from({ length: mlDataset.features }, (_, i) => `feature_${i + 1}`),
+    uploadDate: mlDataset.uploadedAt.split('T')[0]
+  }));
+
+  const handleCreateModel = async () => {
+    await executeWithRetry(async () => {
       // Validate input
       if (!newModel.name.trim()) {
         throw new Error('Model name is required');
@@ -66,38 +121,31 @@ const AIModelTraining: React.FC = () => {
         throw new Error('Selected dataset not found');
       }
 
-      const model: ModelTraining = {
-        id: Date.now().toString(),
+      // Create model using ML service
+      const modelData = {
         name: newModel.name.trim(),
-        type: newModel.type,
-        status: 'draft',
-        accuracy: 0,
-        datasetSize: selectedDataset.size,
-        trainingProgress: 0,
-        createdAt: new Date().toISOString().split('T')[0],
-        lastTrained: 'Never'
+        description: newModel.description,
+        type: 'classification' as const, // Map to ML service type
+        algorithm: 'random_forest',
+        datasetId: newModel.datasetId,
+        hyperparameters: {
+          n_estimators: 100,
+          max_depth: 10,
+          random_state: 42
+        }
       };
 
-      setModels([...models, model]);
-      setNewModel({ name: '', type: 'progress_prediction', datasetId: '', description: '' });
+      const createdModel = await createModel(modelData);
       
-      logInfo('Model created successfully', 'AIModelTraining', 'createModel', { modelId: model.id });
-    } catch (error) {
-      const errorMessage = handleError(error, { 
-        showToast: true, 
-        logError: true 
-      });
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
+      setNewModel({ name: '', type: 'progress_prediction', datasetId: '', description: '' });
+      showSuccessToast('Model created successfully');
+      
+      return createdModel;
+    }, 'createModel');
   };
 
   const handleStartTraining = async (modelId: string) => {
-    try {
-      setLoading(true);
-      setError(null);
-
+    await executeWithRetry(async () => {
       const model = models.find(m => m.id === modelId);
       if (!model) {
         throw new Error('Model not found');
@@ -107,54 +155,17 @@ const AIModelTraining: React.FC = () => {
         throw new Error('Only draft models can be trained');
       }
 
-      // Update model status to training
-      setModels(models.map(model => 
-        model.id === modelId 
-          ? { ...model, status: 'training', trainingProgress: 0 }
-          : model
-      ));
-
-      logInfo('Training started', 'AIModelTraining', 'startTraining', { modelId });
-
-      // Simulate training progress with error handling
-      for (let progress = 0; progress <= 100; progress += 10) {
-        try {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          setModels(prevModels => prevModels.map(model => 
-            model.id === modelId 
-              ? { 
-                  ...model, 
-                  trainingProgress: progress,
-                  status: progress === 100 ? 'completed' : 'training',
-                  accuracy: progress === 100 ? Math.random() * 20 + 80 : model.accuracy,
-                  lastTrained: progress === 100 ? new Date().toISOString().split('T')[0] : model.lastTrained
-                }
-              : model
-          ));
-        } catch (trainingError) {
-          // Handle training errors
-          setModels(prevModels => prevModels.map(model => 
-            model.id === modelId 
-              ? { ...model, status: 'failed' }
-              : model
-          ));
-          
-          logError(trainingError as Error, 'AIModelTraining', 'trainingProgress', { modelId, progress });
-          throw trainingError;
-        }
-      }
-
-      logInfo('Training completed successfully', 'AIModelTraining', 'trainingComplete', { modelId });
-    } catch (error) {
-      const errorMessage = handleError(error, { 
-        showToast: true, 
-        logError: true 
+      // Start training using ML service
+      const trainingResult = await startTraining(modelId, {
+        epochs: 100,
+        batchSize: 32,
+        learningRate: 0.001,
+        validationSplit: 0.2
       });
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
+
+      showSuccessToast('Training started successfully');
+      return trainingResult;
+    }, 'startTraining');
   };
 
   const getStatusColor = (status: string) => {
@@ -270,10 +281,10 @@ const AIModelTraining: React.FC = () => {
                 </div>
                 <Button 
                   onClick={handleCreateModel} 
-                  disabled={!newModel.name || !newModel.datasetId || loading}
+                  disabled={!newModel.name || !newModel.datasetId || mlLoading || isRetrying}
                   className="flex items-center gap-2"
                 >
-                  {loading ? (
+                  {mlLoading || isRetrying ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       Creating...
@@ -286,11 +297,19 @@ const AIModelTraining: React.FC = () => {
             </Card>
 
             {/* Error Display */}
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+            <ErrorDisplay
+              error={errorState || mlError}
+              title="AI Model Training Error"
+              description="There was an issue with the AI model training process"
+              showRetry={true}
+              onRetry={() => {
+                clearError();
+                // Refresh data by re-mounting or calling refresh functions
+                window.location.reload();
+              }}
+              onDismiss={clearError}
+              size="md"
+            />
 
             {/* Models List */}
             <div className="grid gap-4">
@@ -326,10 +345,10 @@ const AIModelTraining: React.FC = () => {
                           <Button 
                             size="sm" 
                             onClick={() => handleStartTraining(model.id)}
-                            disabled={loading}
+                            disabled={mlLoading || isRetrying}
                             className="flex items-center gap-1"
                           >
-                            {loading ? (
+                            {mlLoading || isRetrying ? (
                               <>
                                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
                                 Starting...
