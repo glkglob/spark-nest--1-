@@ -54,7 +54,7 @@ import {
   handleBenchmarking,
   handlePerformanceMonitoring
 } from "./routes/advanced-analytics";
-import { 
+import {
   authRateLimit,
   apiRateLimit,
   uploadRateLimit,
@@ -66,17 +66,17 @@ import {
   requestSizeLimit,
   requestTimeout,
   securityHeaders,
-  bruteForceProtection
-} from "./middleware/security";
-import { 
+  bruteForceProtection,
+} from "./middleware";
+import {
   cacheProjects,
   cacheAnalytics,
   cacheWeather,
   cacheUserProfile,
   getCacheStats,
   clearCache,
-  compressResponse
-} from "./middleware/caching";
+  compressResponse,
+} from "./middleware";
 import { 
   handleAIProgressAnalysis,
   handleMLPredictions,
@@ -153,6 +153,7 @@ import {
   handleCompileContract
 } from "./routes/blockchain-marketplace";
 import "./types";
+import { corsOrigins, pingMessage } from "./lib/config";
 
 export function createServer() {
   const app = express();
@@ -177,12 +178,12 @@ export function createServer() {
   
   // Compression and CORS
   app.use(compressResponse);
-  app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-      ? ["https://fusion-starter-1758821892.netlify.app"]
-      : ["http://localhost:8080", "http://localhost:5173"],
-    credentials: true
-  }));
+  app.use(
+    cors({
+      origin: corsOrigins,
+      credentials: true,
+    }),
+  );
   
   // Body parsing
   app.use(express.json({ limit: '10mb' }));
@@ -198,8 +199,7 @@ export function createServer() {
 
   // Example API routes
   app.get("/api/ping", (_req, res) => {
-    const ping = process.env.PING_MESSAGE ?? "ping";
-    res.json({ message: ping });
+    res.json({ message: pingMessage });
   });
 
   app.get("/api/demo", handleDemo);

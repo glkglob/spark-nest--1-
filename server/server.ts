@@ -1,6 +1,7 @@
 import { createServer as createHttpServer } from "http";
 import { Server as SocketIOServer } from "socket.io";
 import { createServer } from "./index";
+import { socketOrigins } from "./lib/config";
 import { NotificationService } from "./lib/notifications";
 import { FileStorageService } from "./lib/file-storage";
 
@@ -13,11 +14,9 @@ const server = createHttpServer(app);
 // Socket.IO setup
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? "https://fusion-starter-1758821892.netlify.app" 
-      : ["http://localhost:8080", "http://localhost:5173"],
-    methods: ["GET", "POST"]
-  }
+    origin: socketOrigins,
+    methods: ["GET", "POST"],
+  },
 });
 
 // Initialize services
