@@ -172,7 +172,7 @@ export function useBlockchain() {
     setError(null);
     
     try {
-      const deployment = await api.deploySmartContract(contractId, network, constructorArgs);
+      const deployment = await api.deployMarketplaceContract(contractId, network, constructorArgs);
       setDeployments(prev => [...prev, deployment]);
       return deployment;
     } catch (err) {

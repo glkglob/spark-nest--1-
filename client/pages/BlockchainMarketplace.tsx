@@ -22,7 +22,8 @@ import {
   Copy,
   CheckCircle,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react';
 
 interface SmartContract {

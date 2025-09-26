@@ -249,11 +249,15 @@ export const handleEnergyOptimization: RequestHandler = async (req, res) => {
     // Mock energy optimization analysis
     const optimization = await optimizeEnergyConsumption(userId, fleetId as string);
     
+    const savings = (optimization as any).optimization?.costSavings 
+      ?? (optimization as any).costSavings 
+      ?? (optimization as any).optimization?.savings 
+      ?? 0;
     res.json({
       fleetId: fleetId || 'all',
       optimization,
-      savings: optimization.savings,
-      recommendations: optimization.recommendations,
+      savings,
+      recommendations: (optimization as any).recommendations,
       lastUpdated: new Date().toISOString()
     });
 

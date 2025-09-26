@@ -198,8 +198,8 @@ export const handleGetUserData: RequestHandler = async (req, res) => {
         name: dbUser.name,
         role: dbUser.role,
         avatar: dbUser.avatar,
-        createdAt: dbUser.createdAt.toISOString(),
-        updatedAt: dbUser.updatedAt.toISOString(),
+        createdAt: (dbUser as any).createdAt?.toISOString?.() || (dbUser as any).created_at || new Date().toISOString(),
+        updatedAt: (dbUser as any).updatedAt?.toISOString?.() || (dbUser as any).updated_at || new Date().toISOString(),
         lastLoginAt: new Date().toISOString(), // Mock last login
         isActive: true,
         preferences: {
@@ -405,7 +405,7 @@ export const handleGetUserStatistics: RequestHandler = async (req, res) => {
     // Get materials
     const materials = await ProjectsService.getUserMaterials(userId);
     const totalMaterials = materials.length;
-    const lowStockMaterials = materials.filter(m => m.currentStock < m.minStock).length;
+    const lowStockMaterials = materials.filter((m: any) => (m.currentStock ?? m.current_stock ?? 0) < (m.minStock ?? m.min_stock ?? 0)).length;
 
     // Calculate project progress
     const averageProgress = projects.length > 0 

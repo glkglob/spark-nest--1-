@@ -142,7 +142,8 @@ export function useProjects() {
     if (!token) throw new Error('Not authenticated');
     
     try {
-      return await api.getProject(id);
+      const all = await api.getProjects();
+      return all.find((p: any) => p.id === id) || null;
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);

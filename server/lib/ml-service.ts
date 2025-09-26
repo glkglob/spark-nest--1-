@@ -92,31 +92,53 @@ export interface PredictionResult {
 }
 
 // Validation Schemas
-export const modelCreationSchema = z.object({
+export const modelCreationSchema: z.ZodSchema<any> = z.object({
   name: z.string().min(1),
-  type: z.enum(['progress_prediction', 'quality_assessment', 'safety_analysis', 'cost_optimization']),
-  algorithm: z.enum(['random_forest', 'neural_network', 'gradient_boosting', 'svm', 'cnn']),
+  type: z.union([
+    z.literal('progress_prediction'),
+    z.literal('quality_assessment'),
+    z.literal('safety_analysis'),
+    z.literal('cost_optimization')
+  ]),
+  algorithm: z.union([
+    z.literal('random_forest'),
+    z.literal('neural_network'),
+    z.literal('gradient_boosting'),
+    z.literal('svm'),
+    z.literal('cnn')
+  ]),
   datasetId: z.string(),
-  hyperparameters: z.record(z.any()).optional(),
+  hyperparameters: z.record(z.string(), z.any()).optional(),
   description: z.string().optional()
 });
 
-export const datasetUploadSchema = z.object({
+export const datasetUploadSchema: z.ZodSchema<any> = z.object({
   name: z.string().min(1),
-  type: z.enum(['csv', 'json', 'images', 'time_series']),
+  type: z.union([
+    z.literal('csv'),
+    z.literal('json'),
+    z.literal('images'),
+    z.literal('time_series')
+  ]),
   features: z.array(z.string()).optional(),
   targetColumn: z.string().optional(),
   description: z.string().optional()
 });
 
-export const pipelineCreationSchema = z.object({
+export const pipelineCreationSchema: z.ZodSchema<any> = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   nodes: z.array(z.object({
     id: z.string(),
-    type: z.enum(['data_source', 'preprocessing', 'model', 'evaluation', 'deployment']),
+    type: z.union([
+      z.literal('data_source'),
+      z.literal('preprocessing'),
+      z.literal('model'),
+      z.literal('evaluation'),
+      z.literal('deployment')
+    ]),
     name: z.string(),
-    config: z.record(z.any()),
+    config: z.record(z.string(), z.any()),
     position: z.object({ x: z.number(), y: z.number() })
   })),
   connections: z.array(z.object({

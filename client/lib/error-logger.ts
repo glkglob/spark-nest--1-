@@ -47,28 +47,23 @@ class ErrorLogger {
   private setupGlobalErrorHandlers(): void {
     // Handle unhandled promise rejections
     window.addEventListener('unhandledrejection', (event) => {
-      this.logError(
-        new Error(`Unhandled Promise Rejection: ${event.reason}`),
-        'unhandled_promise_rejection',
-        {
-          reason: event.reason,
-          promise: event.promise
-        }
-      );
+      const err = new Error(`Unhandled Promise Rejection`);
+      (err as any).reason = event.reason;
+      this.logError(err, 'unhandled_promise_rejection', 'promise', {
+        reason: String(event.reason),
+        hasPromise: !!event.promise
+      });
     });
 
     // Handle global JavaScript errors
     window.addEventListener('error', (event) => {
-      this.logError(
-        new Error(event.message),
-        'global_error',
-        {
-          filename: event.filename,
-          lineno: event.lineno,
-          colno: event.colno,
-          error: event.error
-        }
-      );
+      const err = new Error(event.message);
+      this.logError(err, 'global_error', 'window_error', {
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        hasError: !!event.error
+      });
     });
   }
 

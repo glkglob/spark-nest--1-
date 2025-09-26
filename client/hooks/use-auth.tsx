@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (credentials: LoginRequest): Promise<{ success: boolean; error?: string }> => {
     try {
-      const data = await api.login(credentials);
+      const data = await api.login(credentials.email, credentials.password);
       
       setUser(data.user);
       setToken(data.token);
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signup = async (data: SignupRequest): Promise<{ success: boolean; error?: string }> => {
     try {
-      const authData = await api.signup(data);
+      const authData = await api.signup(data.email, data.password, data.name);
       
       setUser(authData.user);
       setToken(authData.token);

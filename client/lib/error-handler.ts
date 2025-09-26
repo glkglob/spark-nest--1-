@@ -124,19 +124,20 @@ export function isOperationalError(error: any): boolean {
   }
 
   // Network errors are typically operational
-  if (error?.code && [
-    ErrorCodes.NETWORK_ERROR,
-    ErrorCodes.TIMEOUT,
-    ErrorCodes.CONNECTION_REFUSED,
-    ErrorCodes.UNAUTHORIZED,
-    ErrorCodes.FORBIDDEN,
-    ErrorCodes.TOKEN_EXPIRED,
-    ErrorCodes.VALIDATION_ERROR,
-    ErrorCodes.NOT_FOUND,
-    ErrorCodes.ALREADY_EXISTS,
-    ErrorCodes.INSUFFICIENT_PERMISSIONS,
-    ErrorCodes.QUOTA_EXCEEDED,
-  ].includes(error.code as ErrorCode)) {
+  if (error?.code && (
+    error.code === ErrorCodes.NETWORK_ERROR ||
+    error.code === ErrorCodes.TIMEOUT ||
+    error.code === ErrorCodes.CONNECTION_REFUSED ||
+    error.code === ErrorCodes.UNAUTHORIZED ||
+    error.code === ErrorCodes.FORBIDDEN ||
+    error.code === ErrorCodes.TOKEN_EXPIRED ||
+    error.code === ErrorCodes.VALIDATION_ERROR ||
+    error.code === ErrorCodes.NOT_FOUND ||
+    error.code === ErrorCodes.ALREADY_EXISTS ||
+    error.code === ErrorCodes.INSUFFICIENT_PERMISSIONS ||
+    error.code === ErrorCodes.QUOTA_EXCEEDED ||
+    error.code === ErrorCodes.INVALID_CREDENTIALS
+  )) {
     return true;
   }
 

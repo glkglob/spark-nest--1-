@@ -9,7 +9,7 @@ export interface ErrorDisplayProps {
   error: string | Error | null;
   title?: string;
   description?: string;
-  variant?: 'default' | 'destructive' | 'warning' | 'info';
+  variant?: 'default' | 'destructive';
   showRetry?: boolean;
   onRetry?: () => void;
   onDismiss?: () => void;
@@ -36,13 +36,10 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
 
   const getIcon = () => {
     switch (variant) {
-      case 'warning':
-        return <AlertTriangle className="h-4 w-4" />;
-      case 'info':
-        return <Info className="h-4 w-4" />;
       case 'destructive':
-      default:
         return <AlertCircle className="h-4 w-4" />;
+      default:
+        return <Info className="h-4 w-4" />;
     }
   };
 

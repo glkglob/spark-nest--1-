@@ -40,19 +40,16 @@ class ApiService {
   ): Promise<T> {
     try {
       const url = `${this.baseUrl}${endpoint}`;
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      };
-
-      if (this.token) {
-        headers.Authorization = `Bearer ${this.token}`;
+      const headers = new Headers({ 'Content-Type': 'application/json' });
+      if (options.headers) {
+        new Headers(options.headers).forEach((value, key) => headers.set(key, value));
       }
 
-      const response = await fetch(url, {
-        ...options,
-        headers,
-      });
+      if (this.token) {
+        headers.set('Authorization', `Bearer ${this.token}`);
+      }
+
+      const response = await fetch(url, { ...options, headers });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -128,7 +125,7 @@ class ApiService {
     }
   }
 
-  private async uploadFile<T>(
+  private async sendFile<T>(
     endpoint: string,
     file: File,
     additionalData: Record<string, any> = {}
@@ -141,10 +138,8 @@ class ApiService {
       formData.append(key, JSON.stringify(value));
     });
 
-    const headers: HeadersInit = {};
-    if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
-    }
+    const headers = new Headers();
+    if (this.token) headers.set('Authorization', `Bearer ${this.token}`);
 
     const response = await fetch(url, {
       method: 'POST',
@@ -273,7 +268,7 @@ class ApiService {
 
   // Files
   async uploadFile(file: File, metadata?: any) {
-    return this.uploadFile<any>('/files/upload', file, { metadata });
+    return this.sendFile<any>('/files/upload', file, { metadata });
   }
 
   async getFiles() {
@@ -373,28 +368,28 @@ class ApiService {
     return this.request<any>('/analytics/performance');
   }
 
-  // AI/ML
+  // AI/ML (generic analysis endpoints)
   async performAIAnalysis(analysisData: any) {
     return this.request<any>('/ai/analysis', {
       method: 'POST',
       body: JSON.stringify(analysisData),
     });
   }
-
-  async getMLPredictions(predictionData: any) {
+  
+  async getAIPredictions(predictionData: any) {
     return this.request<any>('/ai/predictions', {
       method: 'POST',
       body: JSON.stringify(predictionData),
     });
   }
-
+  
   async performComputerVisionAnalysis(visionData: any) {
     return this.request<any>('/ai/computer-vision', {
       method: 'POST',
       body: JSON.stringify(visionData),
     });
   }
-
+  
   async getSmartResourceOptimization(projectId: string, optimizationType: string, constraints?: any) {
     const params = new URLSearchParams({
       projectId,
@@ -403,14 +398,14 @@ class ApiService {
     });
     return this.request<any>(`/ai/optimization?${params}`);
   }
-
+  
   async getAIRiskAssessment(projectId?: string, riskFactors?: any) {
     const params = new URLSearchParams();
     if (projectId) params.append('projectId', projectId);
     if (riskFactors) params.append('riskFactors', JSON.stringify(riskFactors));
     return this.request<any>(`/ai/risk-assessment?${params}`);
   }
-
+  
   async performSmartQualityControl(qualityData: any) {
     return this.request<any>('/ai/quality-control', {
       method: 'POST',
@@ -566,7 +561,7 @@ class ApiService {
     });
   }
 
-  async deploySmartContract(contractId: string, network: string, constructorArgs?: any[]) {
+  async deployMarketplaceContract(contractId: string, network: string, constructorArgs?: any[]) {
     return this.request<any>(`/blockchain/contracts/deploy`, {
       method: 'POST',
       body: JSON.stringify({ contractId, network, constructorArgs }),
@@ -621,7 +616,7 @@ class ApiService {
   }
 
   async upload3DModel(modelData: any, file: File) {
-    return this.uploadFile<any>('/vr-ar/model', file, modelData);
+    return this.sendFile<any>('/vr-ar/model', file, modelData);
   }
 
   async createVRTrainingSession(trainingData: any) {
@@ -696,7 +691,7 @@ class ApiService {
   }
 
   async processDocument(documentData: any, file: File) {
-    return this.uploadFile<any>('/automation/document-processing', file, documentData);
+    return this.sendFile<any>('/automation/document-processing', file, documentData);
   }
 
   // ML Training
@@ -719,7 +714,7 @@ class ApiService {
   }
 
   async uploadMLDataset(datasetData: any, file: File) {
-    return this.uploadFile<any>('/ml/datasets', file, datasetData);
+    return this.sendFile<any>('/ml/datasets', file, datasetData);
   }
 
   async createMLPipeline(pipelineData: any) {
